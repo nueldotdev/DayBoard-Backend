@@ -1,0 +1,66 @@
+# Python-related
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyd.lock
+*.so
+
+# Environment variables and sensitive settings
+.env
+.env.*
+
+# Virtual environment
+env/
+venv/
+*.egg-info/
+
+# Django-related
+db.sqlite3
+*.sqlite3
+/media/
+*.log
+
+# Static and media files
+/staticfiles/
+/mediafiles/
+*.svg
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Migrations (optional, if you regenerate them often during dev)
+**/migrations/*.py
+!**/migrations/__init__.py
+
+# Editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Build and distribution files
+dist/
+build/
+*.egg
+*.wheel
+
+# Tests and coverage
+.coverage
+.tox/
+.pytest_cache/
+htmlcov/
+
+# Cache
+*.cache
+*.mo
+*.pot
+
+# Logs
+*.log
+logs/
