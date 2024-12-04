@@ -9,6 +9,8 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, blank=False, null=False)
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)
+    image = models.ImageField(upload_to='profile_imgs/', blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
 
     # Might use later
 
