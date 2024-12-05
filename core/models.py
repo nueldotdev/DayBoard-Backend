@@ -3,6 +3,7 @@ from django.utils.text import slugify
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings # For AUTH_USER_MODEL
 
+# User model
 class User(AbstractUser):
     first_name = models.CharField(max_length=25, blank=False, null=False)
     last_name = models.CharField(max_length=25, blank=True, null=True)
@@ -27,21 +28,22 @@ class User(AbstractUser):
         return self.email
 
 
-
-class Boards(models.Model):
+# Board models
+class Board(models.Model):
     slug = models.SlugField(unique=True, max_length=200, blank=True)
     name = models.CharField(max_length=25, blank=False, null=False)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
     favorite = models.BooleanField(default=False)
     color = models.CharField(max_length=25, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(self.name)
             slug = base_slug
             counter = 1
-            while Boards.objects.filter(slug=slug).exists():
+            while Board.objects.filter(slug=slug).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.slug = slug
@@ -49,3 +51,26 @@ class Boards(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class List(models.Model):
+    board = models.ForeignKey(Board, on_delete=models.CASCADE)
+    title = models.CharField(max_length=20, null=False, blank=False)
+    # total_cards = models.IntegerField(max=10, )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class Card(models.Model):
+    title = models.CharField(max_length=30, blank=False, null=False)
+    list = models.ForeignKey(List, on_delete=models.CASCADE)
+    description = models.TextField(max_length=200, blank=True, null=True)
+    image_url = models.CharField(blank=True, null=True, max_length=1000000)
+    uploaded_img = models.ImageField(upload_to='card_images/', null=True, blank=True)
+    due_date = models.DateTimeField(auto_now_add=False, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

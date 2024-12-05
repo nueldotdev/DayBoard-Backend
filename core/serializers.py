@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Boards
+from .models import User, Board
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
