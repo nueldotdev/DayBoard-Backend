@@ -14,15 +14,40 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
 
     # Might use later
-
     # is_active = models.BooleanField(default=True)
     # is_staff = models.BooleanField(default=False)
     # is_superuser = models.BooleanField(default=False)
-    
+
     is_admin = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']  # Username is still required unless you customize it further.
+
+
+    # User focus session stats
+    focus_streak = models.IntegerField(default=0)
+    longest_focus_streak = models.IntegerField(default=0)
+    total_focus_time = models.IntegerField(default=0)
+    total_break_time = models.IntegerField(default=0)
+
+
+    # User preferences
+    mins_for_streak = models.IntegerField(default=10)
+    focus_session_length = models.IntegerField(default=25)  # Length of focus session in minutes
+    focus_session_start_time = models.TimeField(null=True, blank=True, default=None)  # Optional
+    break_session_length = models.IntegerField(default=5)  # Length of break in minutes
+    break_session_start_time = models.TimeField(null=True, blank=True, default=None)  # Optional
+    long_break_length = models.IntegerField(default=15)  # Length of long break in minutes
+    long_break_start_time = models.TimeField(null=True, blank=True, default=None)  # Optional
+
+    def get_short_name(self):
+        return self.first_name
+
+    def get_initials(self):
+        return f"{self.first_name[0]}{self.last_name[0]}" if self.last_name else f"{self.first_name[0]}"
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
 
     def __str__(self):
         return self.email
@@ -52,6 +77,9 @@ class Board(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        db_table = 'boards'
+
 
 class List(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
@@ -59,8 +87,22 @@ class List(models.Model):
     # total_cards = models.IntegerField(max=10, )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # User might want to put one ahead or after another, lets make sure it's position is consistent
+    position = models.IntegerField(default=0)
+
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        check_position = List.objects.filter(board=self.board)
+        if check_position.exists():
+            max_position = check_position.latest('position').position
+            if max_position < self.position:
+                self.position = max_position + 1
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'lists'
 
 
 class Card(models.Model):
@@ -69,8 +111,79 @@ class Card(models.Model):
     description = models.TextField(max_length=200, blank=True, null=True)
     image_url = models.CharField(blank=True, null=True, max_length=1000000)
     uploaded_img = models.ImageField(upload_to='card_images/', null=True, blank=True)
+    priority = models.ChoicesField(choices=[('High', 'High'), ('Medium', 'Medium'), ('Low', 'Low')], default='', blank=True, null=True)
     due_date = models.DateTimeField(auto_now_add=False, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        db_table = 'cards'
+
+
+class Subtask(models.Model):
+    card = models.ForeignKey(Card, on_delete=models.CASCADE)
+    title = models.CharField(max_length=30, blank=False, null=False)
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        db_table = 'subtasks'
+
+
+class Comment(models.Model):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    card = models.ForeignKey(Card, on_delete=models.CASCADE)
+    text = models.TextField(max_length=200, blank=False, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    total_reactions = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.text
+
+
+    class Meta:
+        db_table = 'comments'
+
+
+class Reaction(models.Model):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
+    # reaction will be an emoji, almost as how discord does it
+    reaction_type = models.CharField(max_length=10, blank=False, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.reaction_type
+
+
+
+# models for focus session, focus streak
+
+
+class FocusSession(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    focus_length = models.IntegerField(default=25)
+    break_length = models.IntegerField(default=5)
+    start_time = models.TimeField(blank=True, null=True, default=None)
+    focused_on = models.CharField(max_length=100, blank=True, null=True)
+    minutes_focused = models.IntegerField(default=0)
+    entry_date = models.DateField(auto_now_add=True)
+
+    # can only count as a streak if user spends at least 10 minutes of focus
+    def save(self, *args, **kwargs):
+        if self.minutes_focused >= self.user.mins_for_streak:
+            self.user.focus_streak += 1
+            self.user.focus_streak.save()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.focused_on
+
+    class Meta:
+        db_table = 'focus_sessions'
