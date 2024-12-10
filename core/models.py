@@ -163,23 +163,79 @@ class Reaction(models.Model):
 
 
 # models for focus session, focus streak
+class FocusBlock(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    title = models.TimeField(blank=True, null=True, default=None)
+    description = models.TextField(max_length=200, blank=True, null=True)
+
+    # `frequency_by_week` will be stored in days, and should reset every week
+    frequency_by_week = models.IntegerField(default=0)
+    total_sessions = models.IntegerField(default=0)
+
+    # `total_time` will be stored in mins, can then be converted to hours in the frontend
+    total_time = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'focus_flows'
+
+
+class FocusPath(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)  # Name of the flow
+    blocks = models.ManyToManyField(FocusBlock, through="FocusBlockPath")  # Connect to blocks
+
+    total_time = models.PositiveIntegerField(blank=True, null=True)  # Total time in minutes
+    total_time_limit = models.PositiveIntegerField(blank=True, null=True)  # Optional limit in minutes
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'focus_paths'
+
+
+class FocusFlowPath(models.Model):
+    path = models.ForeignKey(FocusPath, on_delete=models.CASCADE)
+    block = models.ForeignKey(FocusBlock, on_delete=models.CASCADE)
+    order = models.PositiveIntegerField()  # Order of the blocks in the block
+
+    class Meta:
+        db_table = 'focus_block_paths'
+
+
+
+class FocusStat(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    total_time = models.IntegerField(default=0) # total time spent on a date
+    total_focus_sessions = models.IntegerField(default=0) # total number of focus sessions on a date
+    focus_block = models.ForeignKey(FocusBlock, on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'focus_stats'
 
 
 class FocusSession(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
     focus_length = models.IntegerField(default=25)
     break_length = models.IntegerField(default=5)
     start_time = models.TimeField(blank=True, null=True, default=None)
     focused_on = models.CharField(max_length=100, blank=True, null=True)
+    block = models.ForeignKey(FocusBlock, on_delete=models.CASCADE, blank=True, null=True)
+    path = models.ForeignKey(FocusPath, on_delete=models.CASCADE, blank=True, null=True)
     minutes_focused = models.IntegerField(default=0)
     entry_date = models.DateField(auto_now_add=True)
 
-    # can only count as a streak if user spends at least 10 minutes of focus
+    # can only count as a streak if user spends at least minutes set by user
     def save(self, *args, **kwargs):
         if self.minutes_focused >= self.user.mins_for_streak:
             self.user.focus_streak += 1
             self.user.focus_streak.save()
+
+        if self.flow:
+            self.focus_length = self.flow.total_time
+
+        if self.path:
+            self.focus_length = self.path.total_time
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -187,3 +243,4 @@ class FocusSession(models.Model):
 
     class Meta:
         db_table = 'focus_sessions'
+
