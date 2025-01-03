@@ -27,6 +27,7 @@ class User(AbstractUser):
     # User preferences
     mins_for_streak = models.IntegerField(default=10)
 
+
     def get_short_name(self):
         return self.first_name
 
@@ -43,6 +44,7 @@ class User(AbstractUser):
 # Board models
 class Board(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     slug = models.SlugField(unique=True, max_length=200, blank=True)
     name = models.CharField(max_length=25, blank=False, null=False)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -74,6 +76,7 @@ class List(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     title = models.CharField(max_length=20, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
     position = models.IntegerField(default=0)
 
     def __str__(self):
@@ -107,6 +110,7 @@ class Card(models.Model):
     image_url = models.CharField(blank=True, null=True, max_length=1000000)
     uploaded_img = models.ImageField(upload_to='card_images/', null=True, blank=True)
     priority = models.CharField(max_length=6, choices=[('High', 'High'), ('Medium', 'Medium'), ('Low', 'Low')], default='', blank=True, null=True)
+
     due_date = models.DateTimeField(auto_now_add=False, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -133,6 +137,7 @@ class Subtask(models.Model):
 
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     card = models.ForeignKey(Card, on_delete=models.CASCADE)
     text = models.TextField(max_length=200, blank=False, null=False)
@@ -155,7 +160,6 @@ class Reaction(models.Model):
 
     def __str__(self):
         return self.reaction_type
-
 
 # models for focus session, focus streak
 class FocusBlock(models.Model):
@@ -234,3 +238,4 @@ class FocusStat(models.Model):
 
     class Meta:
         db_table = 'focus_stats'
+
