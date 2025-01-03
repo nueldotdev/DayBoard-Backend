@@ -64,3 +64,6 @@ htmlcov/
 # Logs
 *.log
 logs/
+
+
+db.sql
