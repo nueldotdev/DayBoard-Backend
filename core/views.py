@@ -1,10 +1,12 @@
 # filepath: /c:/Users/walte/Documents/dev/DayBoard-Backend/core/views.py
 from http.client import responses
+from pyexpat import model
 from django.http import HttpResponse
 from django.shortcuts import render
+from core import serializers
 from core.functions.db_actions import DBActions
-from core.models import User
-from core.serializers import UserLoginSerializer, UserSerializer
+from core.models import Reaction, User, Waitlist
+from core.serializers import UserLoginSerializer, UserSerializer, WaitlistSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -28,6 +30,24 @@ class UserView(APIView):
     serializer = UserSerializer(request.user)
     return Response(serializer.data)
 
+# Waitlist
+class WaitlistView(APIView):
+    permission_classes = [AllowAny] 
+    model = Waitlist
+    serializers = WaitlistSerializer
+    
+    def post(self, request):
+        serializer = self.serializers(data=request.data)
+        if serializer.is_valid():
+            try:
+                waitlist = DBActions().create('waitlist', serializer.validated_data)
+                return Response(waitlist, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                print(f"Failed to create waitlist: {e}")
+                return Response({"msg": "Failed to create waitlist", "error": e}, status=status.HTTP_400_BAD_REQUEST)
+                
+        print("Serializer failed")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

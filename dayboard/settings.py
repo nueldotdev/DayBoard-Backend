@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+from pickle import APPEND
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,7 +30,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
+APPEND_SLASH = False
 # Application definition
 
 INSTALLED_APPS = [
@@ -44,9 +45,11 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
 
     'core',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -57,6 +60,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'dayboard.urls'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://dayboard.vercel.app",
+]
 
 TEMPLATES = [
     {

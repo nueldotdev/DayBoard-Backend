@@ -9,4 +9,7 @@ urlpatterns = [
   path('create_user/', views.CreateUserView.as_view(), name='create_user'),
   path('update_user/', views.UpdateUser.as_view(), name='update_user'),
   path('login_user/', views.LoginUser.as_view(), name='login_user'),
+  
+  
+  path('add-to-waitlist/', views.WaitlistView.as_view(), name='add-to-waitlist'),
 ]

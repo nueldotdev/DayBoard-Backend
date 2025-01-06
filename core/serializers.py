@@ -1,7 +1,15 @@
 from rest_framework import serializers
 from django.db import models
-from .models import User, Board, List
+from .models import User, Board, List, Waitlist
 import uuid
+
+# waitlist serializers
+class WaitlistSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Waitlist
+        fields = ['name', 'email']
+
 
 # user serializers
 
