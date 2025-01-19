@@ -13,11 +13,6 @@ from rest_framework.permissions import AllowAny
 import jwt
 from .supabase_client import supabase, secret
 
-@api_view(['GET'])
-def current_user(request):
-  serializer = UserSerializer(request.user)
-  return Response(serializer.data)
-
 
 # JWT Token validation
 class ValidateTokenView(APIView):
