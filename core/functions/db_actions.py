@@ -83,6 +83,14 @@ Methods:
         return None
     
     def get(self, table: str, id: str):
+        """
+        Retrieve a record from the specified table by its ID.
+        Args:
+            table (str): The name of the table to query.
+            id (str): The ID of the record to retrieve.
+        Returns:
+            dict or None: The response from the database if the query is successful, otherwise None.
+        """
         
         if self.supabase:
             response = self.supabase.table(table).select().eq('id', id).execute()

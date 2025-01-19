@@ -13,6 +13,7 @@ class WaitlistSerializer(serializers.ModelSerializer):
 
 # user serializers
 
+
 class UserSerializer(serializers.ModelSerializer):
     # Define a password field that is write-only and required
     password = serializers.CharField(write_only=True, required=True)
@@ -22,34 +23,10 @@ class UserSerializer(serializers.ModelSerializer):
         # Specify the model to be serialized
         model = User
         # Define the fields to be included in the serialization
-        fields = ['id', 'image', 'first_name', 'last_name', 'email', 'password', 'date_joined', 'last_login']
+        fields = ['id', 'first_name', 'last_name', 'email', 'password', 'date_joined', 'last_login']
         # Ensure the password field is write-only
         extra_kwargs = {'password': {'write_only': True}}
 
-    def create(self, validated_data):
-        # Extract the password from the validated data
-        password = validated_data.pop('password', None)
-        # Create a new User instance with the remaining validated data
-        user = User(**validated_data)
-        if password:
-            # Set the user's password using the set_password method
-            user.set_password(password)
-        # Save the user instance to the database
-        user.save()
-        return user
-
-    def update(self, instance, validated_data):
-        # Extract the password from the validated data
-        password = validated_data.pop('password', None)
-        # Update the instance's attributes with the remaining validated data
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if password:
-            # Update the user's password using the set_password method
-            instance.set_password(password)
-        # Save the updated instance to the database
-        instance.save()
-        return instance
 
 
 class UserLoginSerializer(serializers.Serializer):
