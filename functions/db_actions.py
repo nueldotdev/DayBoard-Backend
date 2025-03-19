@@ -1,4 +1,4 @@
-from ..supabase_client import supabase
+from .supabase_client import supabase
 
 class DBActions:
     """
@@ -97,8 +97,36 @@ Methods:
             return response
         return None
     
-    def list(self, table: str):
+    def get_many(self, table: str, field: str, value: str):
+        """
+        Retrieves all entries from the given table with the specified field and value.
+        
+        Args:
+            table (str): The name of the table to query.
+            field (str): The field to filter the entries by.
+            value (str): The value to filter the entries by.
+        
+        Returns:
+            dict or None: The response from the database if the query is successful, otherwise None.
+        """
         if self.supabase:
-            response = self.supabase.table(table).select().execute()
+            response = self.supabase.table(table).select().eq(field, value).execute()
+            return response
+        return None
+    
+    def get_by_field(self, table: str, field: str, value: str):
+        """
+        Retrieves an entry from the given table with the specified field and value.
+        
+        Args:
+            table (str): The name of the table to query.
+            field (str): The field to filter the entry by.
+            value (str): The value to filter the entry by.
+        
+        Returns:
+            dict or None: The response from the database if the query is successful, otherwise None.
+        """
+        if self.supabase:
+            response = self.supabase.table(table).select().eq(field, value).execute()
             return response
         return None

@@ -2,7 +2,7 @@ from rest_framework.authentication import get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
 import jwt
 from django.utils.deprecation import MiddlewareMixin
-from .supabase_client import secret  # Supabase secret key
+from functions.supabase_client import secret  # Supabase secret key
 
 class TokenValidationMiddleware(MiddlewareMixin):
     def process_request(self, request):

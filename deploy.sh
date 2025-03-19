@@ -7,4 +7,4 @@ python manage.py makemigrations
 python manage.py migrate
 
 # Run the project with Gunicorn
-gunicorn --workers 3 --threads 2 --bind 0.0.0.0:$PORT dayboard.wsgi:application
+gunicorn --workers 3 --threads 2 --bind 0.0.0.0:$PORT dayboard.wsgi:application 
