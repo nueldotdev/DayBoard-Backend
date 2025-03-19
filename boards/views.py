@@ -42,7 +42,7 @@ class CreateBoardView(APIView):
       logger = logging.getLogger(__name__)
       logger.error(f"Failed to create board: {e}")
 
-      return Response({"msg": "Failed to create board"}, status=status.HTTP_400_BAD_REQUEST)
+      return Response({"message": "Failed to create board"}, status=status.HTTP_400_BAD_REQUEST)
     
     
 class GetBoardsView(APIView):
@@ -59,7 +59,7 @@ class GetBoardsView(APIView):
       boards = DBActions().get_many('boards', 'creator_id', user_id)
       
       if not boards.data or len(boards.data) == 0:
-        return Response({"msg": "No boards found"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "No boards found"}, status=status.HTTP_400_BAD_REQUEST)
       
       for board in boards.data:
         board.pop('creator_id')
@@ -68,7 +68,7 @@ class GetBoardsView(APIView):
     except Exception as e:
       logger = logging.getLogger(__name__)
       logger.error(f"Failed to get boards: {e}")
-      return Response({"msg": "Failed to get boards"}, status=status.HTTP_400_BAD_REQUEST)
+      return Response({"message": "Failed to get boards"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetBoardInfoView(APIView):
@@ -86,18 +86,18 @@ class GetBoardInfoView(APIView):
       board = db.get_many('boards', 'creator_id', user_id)
       
       if not board.data or len(board.data) == 0:
-        return Response({"msg": "No board found"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "No board found"}, status=status.HTTP_400_BAD_REQUEST)
       
       for i in board.data:
         if i['slug'] == board_slug:
           return Response(i, status=status.HTTP_200_OK)
       
-      return Response({"msg": "No board found"}, status=status.HTTP_400_BAD_REQUEST)
+      return Response({"message": "No board found"}, status=status.HTTP_400_BAD_REQUEST)
       
     except Exception as e:
       logger = logging.getLogger(__name__)
       logger.error(f"Failed to get board: {e}")
-      return Response({"msg": "Failed to get board"}, status=status.HTTP_400_BAD_REQUEST)
+      return Response({"message": "Failed to get board"}, status=status.HTTP_400_BAD_REQUEST)
     
     
   
@@ -117,11 +117,11 @@ class UpdateBoardView(APIView):
       board = DBActions().get('boards', board_id)
           
       if not board.data:
-        return Response({"msg": "Board not found"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Board not found"}, status=status.HTTP_400_BAD_REQUEST)
           
       for i in board.data:
         if i['creator_id'] != user_id:
-          return Response({"msg": "You are not authorized to update this board"}, status=status.HTTP_401_UNAUTHORIZED)
+          return Response({"message": "You are not authorized to update this board"}, status=status.HTTP_401_UNAUTHORIZED)
       
       
       data = {
@@ -137,4 +137,4 @@ class UpdateBoardView(APIView):
     # except Exception as e:
     #   logger = logging.getLogger(__name__)
     #   logger.error(f"Failed to update board: {e}")
-    #   return Response({"msg": "Failed to update board"}, status=status.HTTP_400_BAD_REQUEST)
+    #   return Response({"message": "Failed to update board"}, status=status.HTTP_400_BAD_REQUEST)

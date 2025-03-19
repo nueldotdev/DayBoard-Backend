@@ -64,6 +64,7 @@ ROOT_URLCONF = 'dayboard.urls'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://dayboard.vercel.app",
+    "https://day-board-git-dev-nueldotdevs-projects.vercel.app/"
 ]
 
 TEMPLATES = [
