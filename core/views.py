@@ -74,7 +74,6 @@ class UserView(APIView):
 # Waitlist
 class WaitlistView(APIView):
     permission_classes = [AllowAny] 
-    model = Waitlist
     serializers = WaitlistSerializer
     
     def post(self, request):
