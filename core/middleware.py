@@ -7,7 +7,7 @@ from functions.supabase_client import secret  # Supabase secret key
 class TokenValidationMiddleware(MiddlewareMixin):
     def process_request(self, request):
         # Skip validation for open routes
-        open_routes = ["auth/validate-token/", "auth/login/", "auth/signup/", "auth/refresh/", "add-to-waitlist/"]
+        open_routes = ["/auth/validate-token/", "/auth/login/", "/auth/signup/", "/auth/refresh/", "/add-to-waitlist/"]
         print("Route: ", request.path)
         
         if request.path in open_routes:
