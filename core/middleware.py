@@ -7,9 +7,11 @@ from functions.supabase_client import secret  # Supabase secret key
 class TokenValidationMiddleware(MiddlewareMixin):
     def process_request(self, request):
         # Skip validation for open routes
-        open_routes = ["/auth/validate-token", "/auth/login", "/auth/signup", "/auth/refresh", "/add-to-waitlist/", "/auth/google", "/auth/google/callback"]
-        if any(request.path.startswith(route) for route in open_routes):
-            return
+        open_routes = ["/auth/validate-token/", "/auth/login/", "/auth/signup/", "/auth/refresh/", "/add-to-waitlist/", "/auth/google", "/auth/google/callback"]
+        print("Route: ", request.path)
+        
+        if request.path in open_routes:
+          return None
 
         # Check for Authorization header
         auth_header = get_authorization_header(request).decode("utf-8")
