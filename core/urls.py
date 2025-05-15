@@ -12,6 +12,9 @@ urlpatterns = [
   path('auth/refresh/', views.RefreshTokenView.as_view(), name='refresh-token'),
   path('auth/validate-token/', views.ValidateTokenView.as_view(), name='validate-token'),
   
+  path('auth/google/', views.GoogleLogIn.as_view(), name='google-login'),
+  path('auth/google/callback/', views.GoogleCallback.as_view(), name='google-callback'),
+  
   
   path('add-to-waitlist/', views.WaitlistView.as_view(), name='add-to-waitlist'),
 ]

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 import uuid
+from django.utils import timezone
 
 # waitlist serializers
 class WaitlistSerializer(serializers.Serializer):
@@ -19,8 +20,8 @@ class UserSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=100)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, required=True)
-    date_joined = serializers.DateTimeField()
-    last_login = serializers.DateTimeField()
+    date_joined = serializers.DateTimeField(read_only=True, default=serializers.CreateOnlyDefault(timezone.now))
+    last_login = serializers.DateTimeField(read_only=True)
 
     class Meta:
         fields = ['id', 'first_name', 'last_name', 'email', 'password', 'date_joined', 'last_login']
