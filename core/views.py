@@ -317,9 +317,13 @@ class GoogleCallback(View):
         
         tokens = token_resp.json()
         access_token = tokens["access_token"]
-        id_token = tokens.get("id_token")
+        id_token = tokens["id_token"]
         
-        print('TOKENS: ', tokens)
+        # print('TOKENS: ', tokens)
+        # print("")
+        # print("-----------------")
+        # print("")
+        # print(tokens["id_token"])
 
         # 2. Fetch user profile
         profile_resp = requests.get(
@@ -332,6 +336,9 @@ class GoogleCallback(View):
         profile = profile_resp.json()
         email = profile.get("email")
         sub = profile.get("id")
+        name = profile.get("name")
+        
+        print("Profile: ", profile)
 
         # 3. Check if user exists in Supabase users table
         user = DBActions().get_by_field('users', 'email', email)
@@ -356,15 +363,21 @@ class GoogleCallback(View):
             "email": email,
             "email_confirm": True,
             "user_metadata": {
-                "name": profile.get("name"),
+                "name": name,
                 "picture": profile.get("picture"),
                 "google_id": sub,
+                "is_sso_user": True
+            },
+            'options': {
+                'data': {
+                    'displayName': name
+                }
             }
         })
 
         if new_user_resp and new_user_resp.user:
             # Insert into your 'users' table
-            response = DBActions().insert('users', {
+            response = DBActions().create('users', {
                 "id": new_user_resp.user.id,
                 "email": email,
                 "first_name": profile.get("given_name"),
