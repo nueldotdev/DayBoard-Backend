@@ -15,6 +15,7 @@ from rest_framework.permissions import AllowAny
 import jwt
 import requests
 from functions.supabase_client import supabase, secret
+from django.shortcuts import redirect
 
 
 # JWT Token validation
@@ -346,15 +347,15 @@ class GoogleCallback(View):
             # Existing user -> Login using Google ID token
             login_resp = supabase.auth.sign_in_with_id_token({
                 "provider": "google",
-                "id_token": id_token
+                "token": id_token
             })
 
             if login_resp and login_resp.session:
-                return JsonResponse({
-                    "user": user.data,
-                    "access_token": login_resp.session.access_token,
-                    "refresh_token": login_resp.session.refresh_token
-                }, status=200)
+                user_id = user.data.get("id") if isinstance(user.data, dict) else None
+                access_token = login_resp.session.access_token
+                refresh_token = login_resp.session.refresh_token
+                redirect_url = f"{settings.FRONTEND_URL}?user_id={user_id}&access_token={access_token}&refresh_token={refresh_token}"
+                return redirect(redirect_url)
             else:
                 return JsonResponse({"error": "Failed to log in user with Supabase"}, status=400)
 
@@ -387,15 +388,15 @@ class GoogleCallback(View):
             # Log the user in now using ID token
             login_resp = supabase.auth.sign_in_with_id_token({
                 "provider": "google",
-                "id_token": id_token
+                "token": id_token
             })
 
             if login_resp and login_resp.session:
-                return JsonResponse({
-                    "user": response.data,
-                    "access_token": login_resp.session.access_token,
-                    "refresh_token": login_resp.session.refresh_token
-                }, status=200)
+                user_id = response.data.get("id") if isinstance(response.data, dict) else None
+                access_token = login_resp.session.access_token
+                refresh_token = login_resp.session.refresh_token
+                redirect_url = f"{settings.FRONTEND_URL}?user_id={user_id}&access_token={access_token}&refresh_token={refresh_token}"
+                return redirect(redirect_url)
             else:
                 return JsonResponse({"error": "User created but login failed"}, status=400)
 

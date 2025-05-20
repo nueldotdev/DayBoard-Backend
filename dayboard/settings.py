@@ -33,6 +33,9 @@ ALLOWED_HOSTS = ['*']
 APPEND_SLASH = False
 # Application definition
 
+# FRONTEND
+FRONTEND_URL = config('FRONTEND_URL')
+
 # GOOGLE ID'S
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
 GOOGLE_SECRET = config('GOOGLE_SECRET')
