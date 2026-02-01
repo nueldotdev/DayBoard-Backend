@@ -19,5 +19,5 @@ urlpatterns = [
   path('add-to-waitlist/', views.WaitlistView.as_view(), name='add-to-waitlist'),
   
   # Image endpoints
-  path('get-images/', views.GetImagesView.as_view(), name='get-images')
+  # path('get-images/', views.GetImagesView.as_view(), name='get-images')
 ]
