@@ -7,6 +7,8 @@ urlpatterns = [
   path('get-boards/', views.GetBoardsView.as_view(), name='get-boards'),
   path('update-board/', views.UpdateBoardView.as_view(), name='update-board'),
   path('get-board-info/<str:board_slug>', views.GetBoardInfoView.as_view(), name='get-board-info'),
-  # path('add-list/', views.CreateListView.as_view(), name='add-list'),
+  
+  # List endpoints
+  path('add-list/', views.CreateListView.as_view(), name='add-list'),
   # path('list/<str:list_id>', views.ListView.as_view(), name='list'),
 ]

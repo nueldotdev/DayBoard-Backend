@@ -14,7 +14,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 import jwt
 import requests
-from functions.supabase_client import supabase, secret
+from functions.supabase_client import supabase_client, supabase_admin, secret
 from django.shortcuts import redirect
 
 
@@ -64,7 +64,7 @@ class UserView(APIView):
             raise AuthenticationFailed("Token is missing user information.")
 
         # Fetch user details from the database
-        response = DBActions().get('users', user_id)
+        response = DBActions(use_admin=True).get('users', user_id)
 
         # Check if the user exists
         if not response.data or len(response.data) == 0:
@@ -84,7 +84,7 @@ class WaitlistView(APIView):
         serializer = self.serializers(data=request.data)
         if serializer.is_valid():
             try:
-                waitlist = DBActions().create('waitlist', serializer.validated_data)
+                waitlist = DBActions(use_admin=True).create('waitlist', serializer.validated_data)
                 return Response(waitlist, status=status.HTTP_201_CREATED)
             except Exception as e:
                 print(f"Failed to create waitlist: {e}")
@@ -107,7 +107,7 @@ class CreateUserView(APIView):
 
                 # Register user with Supabase Auth
                 # print("Registering user with Supabase Auth")
-                response = supabase.auth.sign_up({
+                response = supabase_client.auth.sign_up({
                     'email': email,
                     'password': password,
                     'options': {
@@ -125,10 +125,10 @@ class CreateUserView(APIView):
                     data.pop('password')  # Remove sensitive data
                     data['id'] = user_id  # Link user ID from Auth
 
-                    # Insert into the users table
-                    user = DBActions().create('users', data)
+                    # Insert into the users table - use admin client to bypass RLS
+                    user = DBActions(use_admin=True).create('users', data)
 
-                    login_response = supabase.auth.sign_in_with_password({
+                    login_response = supabase_client.auth.sign_in_with_password({
                         'email': email,
                         'password': password
                     })
@@ -168,7 +168,7 @@ class LoginUser(APIView):
             password = serializer.validated_data['password']
 
             # Log in the user with Supabase Auth
-            response = supabase.auth.sign_in_with_password({
+            response = supabase_client.auth.sign_in_with_password({
                 'email': email,
                 'password': password
             })
@@ -178,7 +178,7 @@ class LoginUser(APIView):
                 user_id = response.user.id  # Supabase Auth User ID
                 
                 # Fetch user data from table
-                user = DBActions().get('users', user_id)
+                user = DBActions(use_admin=True).get('users', user_id)
 
                 # Handle the response correctly
                 if user.data:
@@ -193,12 +193,6 @@ class LoginUser(APIView):
                         'refresh_token': refresh_token,
                     }
                     return Response(result, status=status.HTTP_200_OK)
-                # elif user.error:
-                #     # Return a custom error message for missing user details
-                #     return Response(
-                #         {"error": "User details not found in database"},
-                #         status=status.HTTP_404_NOT_FOUND
-                #     )
             
             # Handle login failure
             return Response(
@@ -218,7 +212,7 @@ class LogoutUser(APIView):
     def post(self, request):
         try:
             # Call Supabase to sign out the user
-            response = supabase.auth.sign_out(
+            response = supabase_client.auth.sign_out(
                 access_token=request.data.get('access_token'),  # Access token from the request
                 refresh_token=request.data.get('refresh_token')  # Refresh token from the request
             )
@@ -240,11 +234,12 @@ class UpdateUser(APIView):
   def put(self, request, *args, **kwargs):
     serializer = UserSerializer(request.user, data=request.data, partial=True)
     if serializer.is_valid():
-      # Update user in Supabase
+      # Update user in Supabase - use admin client to bypass RLS
       data = serializer.validated_data
-      response = supabase.table('users').update(data).eq('id', request.user.id).execute()
+      response = DBActions(use_admin=True).update('users', data, request.user.id)
+    #   response = supabase_admin.table('users').update(data).eq('id', request.user.id).execute()
       if response.status_code == 200:
-        return Response(serializer.data, status=200)
+        return Response(response.data, status=200)
       return Response(response.json(), status=response.status_code)
     return Response(serializer.errors, status=400)
 
@@ -268,7 +263,7 @@ class RefreshTokenView(APIView):
                 return JsonResponse({"error": "Refresh token is required"}, status=400)
 
             # Call Supabase to refresh the session
-            response = supabase.auth.refresh_session(refresh_token)
+            response = supabase_client.auth.refresh_session(refresh_token)
             
             # Return the new response.session details
             return JsonResponse({
@@ -319,12 +314,6 @@ class GoogleCallback(View):
         tokens = token_resp.json()
         access_token = tokens["access_token"]
         id_token = tokens["id_token"]
-        
-        # print('TOKENS: ', tokens)
-        # print("")
-        # print("-----------------")
-        # print("")
-        # print(tokens["id_token"])
 
         # 2. Fetch user profile
         profile_resp = requests.get(
@@ -342,62 +331,65 @@ class GoogleCallback(View):
         print("Profile: ", profile)
 
         # 3. Check if user exists in Supabase users table
-        user = DBActions().get_by_field('users', 'email', email)
-        if user.data:
-            # Existing user -> Login using Google ID token
-            login_resp = supabase.auth.sign_in_with_id_token({
-                "provider": "google",
-                "token": id_token
-            })
+        try: 
+            user = DBActions(use_admin=True).get_by_field('users', 'email', email)
+            if user.data:
+                # Existing user -> Login using Google ID token
+                login_resp = supabase_client.auth.sign_in_with_id_token({
+                    "provider": "google",
+                    "token": id_token
+                })
 
-            if login_resp and login_resp.session:
-                user_id = user.data.get("id") if isinstance(user.data, dict) else None
-                access_token = login_resp.session.access_token
-                refresh_token = login_resp.session.refresh_token
-                redirect_url = f"{settings.FRONTEND_URL}?user_id={user_id}&access_token={access_token}&refresh_token={refresh_token}"
-                return redirect(redirect_url)
-            else:
-                return JsonResponse({"error": "Failed to log in user with Supabase"}, status=400)
+                if login_resp and login_resp.session:
+                    user_id = user.data.get("id") if isinstance(user.data, dict) else None
+                    access_token = login_resp.session.access_token
+                    refresh_token = login_resp.session.refresh_token
+                    redirect_url = f"{settings.FRONTEND_URL}?user_id={user_id}&access_token={access_token}&refresh_token={refresh_token}"
+                    return redirect(redirect_url)
+                else:
+                    return JsonResponse({"error": "Failed to log in user with Supabase"}, status=400)
 
-        # 4. New user -> create in Supabase
-        new_user_resp = supabase.auth.admin.create_user({
-            "email": email,
-            "email_confirm": True,
-            "user_metadata": {
-                "name": name,
-                "picture": profile.get("picture"),
-                "google_id": sub,
-                "is_sso_user": True
-            },
-            'options': {
-                'data': {
-                    'displayName': name
-                }
-            }
-        })
-
-        if new_user_resp and new_user_resp.user:
-            # Insert into your 'users' table
-            response = DBActions().create('users', {
-                "id": new_user_resp.user.id,
+            # 4. New user -> create in Supabase using admin client to bypass RLS
+            new_user_resp = supabase_admin.auth.admin.create_user({
                 "email": email,
-                "first_name": profile.get("given_name"),
-                "last_name": profile.get("family_name"),
+                "email_confirm": True,
+                "user_metadata": {
+                    "name": name,
+                    "picture": profile.get("picture"),
+                    "google_id": sub,
+                    "is_sso_user": True
+                },
+                'options': {
+                    'data': {
+                        'displayName': name
+                    }
+                }
             })
 
-            # Log the user in now using ID token
-            login_resp = supabase.auth.sign_in_with_id_token({
-                "provider": "google",
-                "token": id_token
-            })
+            if new_user_resp and new_user_resp.user:
+                # Insert into your 'users' table - use admin client to bypass RLS
+                response = DBActions(use_admin=True).create('users', {
+                    "id": new_user_resp.user.id,
+                    "email": email,
+                    "first_name": profile.get("given_name"),
+                    "last_name": profile.get("family_name"),
+                })
 
-            if login_resp and login_resp.session:
-                user_id = response.data.get("id") if isinstance(response.data, dict) else None
-                access_token = login_resp.session.access_token
-                refresh_token = login_resp.session.refresh_token
-                redirect_url = f"{settings.FRONTEND_URL}?user_id={user_id}&access_token={access_token}&refresh_token={refresh_token}"
-                return redirect(redirect_url)
-            else:
-                return JsonResponse({"error": "User created but login failed"}, status=400)
+                # Log the user in now using ID token
+                login_resp = supabase_client.auth.sign_in_with_id_token({
+                    "provider": "google",
+                    "token": id_token
+                })
 
-        return JsonResponse({"error": "Failed to create user in Supabase"}, status=400)
+                if login_resp and login_resp.session:
+                    user_id = response.data.get("id") if isinstance(response.data, dict) else None
+                    access_token = login_resp.session.access_token
+                    refresh_token = login_resp.session.refresh_token
+                    redirect_url = f"{settings.FRONTEND_URL}?user_id={user_id}&access_token={access_token}&refresh_token={refresh_token}"
+                    return redirect(redirect_url)
+                # else:
+                #     return JsonResponse({"error": "User created but login failed"}, status=400)
+
+        except Exception as e:
+            print(f"Error during Google login: {e}")
+            return JsonResponse({"error": str(e)}, status=500)
