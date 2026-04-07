@@ -64,7 +64,7 @@ class GetBoardsView(APIView):
       if not data["boards"] or len(data["boards"]) == 0:
         return Response({"message": data["message"]}, status=status.HTTP_400_BAD_REQUEST)
       
-      return Response(data["boards"], status=status.HTTP_200_OK)
+      return Response(data, status=status.HTTP_200_OK)
     except Exception as e:
       logger = logging.getLogger(__name__)
       logger.error(f"Failed to get boards: {e}")
@@ -88,11 +88,12 @@ class GetBoardInfoView(APIView):
       if not board.data or len(board.data) == 0:
         return Response({"message": "No board found"}, status=status.HTTP_400_BAD_REQUEST)
       
-      for i in board.data:
-        if i['slug'] == board_slug:
-          return Response(i, status=status.HTTP_200_OK)
+      board.data = [b for b in board.data if b['slug'] == board_slug]
       
-      return Response({"message": "No board found"}, status=status.HTTP_400_BAD_REQUEST)
+      if not board.data or len(board.data) == 0:
+        return Response({"message": "No board found"}, status=status.HTTP_400_BAD_REQUEST)
+      
+      return Response(board.data[0], status=status.HTTP_200_OK)
       
     except Exception as e:
       logger = logging.getLogger(__name__)
@@ -195,3 +196,4 @@ class CreateListView(APIView):
       logger.error(f"Failed to create list: {e}")
 
       return Response({"message": "Failed to create list"}, status=status.HTTP_400_BAD_REQUEST)
+    
